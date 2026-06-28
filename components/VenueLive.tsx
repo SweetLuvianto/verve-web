@@ -24,7 +24,15 @@ const TICK_MS = 10_000; // refresh the "x ago" age display
 
 // The small CLIENT island: polls the static snapshot file and renders the live parts.
 // No server code, no DevBridge — it only reads a public static file (or falls back to SAMPLE).
-export function VenueLive({ dataPath, sample }: { dataPath: string; sample: VenueSnapshot }) {
+export function VenueLive({
+  dataPath,
+  sample,
+  musicLabel,
+}: {
+  dataPath: string;
+  sample: VenueSnapshot;
+  musicLabel?: string;
+}) {
   const [snap, setSnap] = useState<VenueSnapshot>(sample);
   const [source, setSource] = useState<SnapshotSource>("sample");
   const [nowMs, setNowMs] = useState<number>(() => Date.parse(sample.freshness.generatedAt) || 0);
@@ -76,6 +84,9 @@ export function VenueLive({ dataPath, sample }: { dataPath: string; sample: Venu
         <StatusBadge state={snap.status.state} />
         <FreshnessPill level={level} ageSec={ageSec} />
       </div>
+      {source !== "sample" && [snap.ambiance?.phase, snap.busy, musicLabel].filter(Boolean).length ? (
+        <div className="venue-vibe">{[snap.ambiance?.phase, snap.busy, musicLabel].filter(Boolean).join(" · ")}</div>
+      ) : null}
 
       <div className="grid">
         <Card title="Live Now">

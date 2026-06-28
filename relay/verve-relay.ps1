@@ -43,6 +43,26 @@ function HumanizeEvent($s) {
 }
 function ToInt($s) { $d = ($s -replace '[^0-9-]', ''); if ($d -eq '' -or $d -eq '-') { return 0 } else { return [int]$d } }
 
+# In-world time phase from regionSecondsOfDay (scenery only). Returns $null on bad input.
+function Phase-Of($hr) {
+  if ($hr -lt 0) { return $null }
+  if ($hr -lt 5) { return 'Night' }
+  if ($hr -lt 7) { return 'Dawn' }
+  if ($hr -lt 11) { return 'Morning' }
+  if ($hr -lt 14) { return 'Midday' }
+  if ($hr -lt 17) { return 'Afternoon' }
+  if ($hr -lt 19) { return 'Golden hour' }
+  if ($hr -lt 22) { return 'Evening' }
+  return 'Night'
+}
+# COARSE presence band — never exposes the raw count (a count of 1-2 = identity-resolvable presence).
+function Busy-Band($c) {
+  if ($c -le 1) { return 'Quiet' }
+  if ($c -le 4) { return 'Lively' }
+  if ($c -le 9) { return 'Buzzing' }
+  return 'Full'
+}
+
 # --- mirror of lib/sanitize.ts (high-precision; refuse to publish on a hit) ---
 function Scan-Forbidden($json) {
   if ($json -match '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') { return 'uuid' }
@@ -133,6 +153,21 @@ function Read-And-Build($hdr) {
     $st = ((Invoke-WebRequest "$BridgeBase/objects/text?objectId=$($sb.objectId)" -Headers $hdr -TimeoutSec 10 -UseBasicParsing).Content | ConvertFrom-Json).text
   } catch { return Build-Offline 'stale_source' }
   $snap = Build-Snapshot $ot $st
+  # --- enrich with AMBIANCE (scenery: in-world time PHASE only; never the sky preset name,
+  #     which is owner free-text and could carry a person's name) ---
+  try {
+    $tm = ((Invoke-WebRequest "$BridgeBase/viewer/time" -Headers $hdr -TimeoutSec 8 -UseBasicParsing).Content | ConvertFrom-Json)
+    $secs = [double]$tm.regionSecondsOfDay
+    $hr = if ($secs -ge 0) { [math]::Floor($secs / 3600.0) } else { -1 }
+    $phase = Phase-Of $hr
+    if ($phase) { $snap.ambiance = [ordered]@{ phase = $phase } }
+  } catch {}
+  # --- enrich with BUSY BAND (coarse bucket of nearby presence; NEVER the raw count or the list) ---
+  try {
+    $nb = ((Invoke-WebRequest "$BridgeBase/world/avatars/nearby" -Headers $hdr -TimeoutSec 10 -UseBasicParsing).Content | ConvertFrom-Json)
+    $c = [int]$nb.count
+    $snap.busy = Busy-Band $c
+  } catch {}
   $json = $snap | ConvertTo-Json -Depth 12 -Compress
   $hit = Scan-Forbidden $json
   if ($hit) { Write-Host "[$(Get-Date -f HH:mm:ss)] PRIVACY HOLD ($hit) — refusing to publish live data"; return Build-Offline 'privacy_hold' }

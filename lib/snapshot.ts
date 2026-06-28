@@ -83,6 +83,10 @@ export interface VenueSnapshot {
   freshness: Freshness;
   // Relay-written proof that the privacy scrub ran clean before publish (trust signal).
   attestation?: { scan: "pass"; checkedAt: string; schemaVersion: number };
+  // Ambiance = pure scenery (in-world time phase + sky preset). NO identity, no counts.
+  ambiance?: { phase?: string; sky?: string };
+  // Busy band = a COARSE bucket of nearby presence (Quiet/Lively/Buzzing/Full). NEVER a raw count.
+  busy?: string;
 }
 
 // Registry = owner config listing games + venues (what the hub renders).
@@ -93,6 +97,7 @@ export interface RegistryVenue {
   region?: string; // SL region / land the branch sits on
   slurl?: string;
   hoursLabel?: string;
+  musicLabel?: string; // owner-authored station/mood label (NEVER the raw stream URL)
   dataPath: string; // path under the data host, e.g. "tt/shelter.json"
 }
 export interface RegistryGame {

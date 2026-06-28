@@ -37,7 +37,7 @@ export default async function VenuePage({ params }: { params: Promise<{ venue: s
           ) : null}
         </div>
 
-        <VenueLive dataPath={v.dataPath} sample={SAMPLE_SNAPSHOT} />
+        <VenueLive dataPath={v.dataPath} sample={SAMPLE_SNAPSHOT} musicLabel={v.musicLabel} />
 
         <MenuShowcase items={TT_MENU} />
       </section>

@@ -153,6 +153,7 @@ a { color: inherit; text-decoration: none; }
 /* directory card extras */
 .venue-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; }
 .venue-card-hours { font-size: 0.82rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.venue-vibe { font-size: 0.92rem; color: var(--label); font-weight: 600; margin-top: 0.15rem; }
 .venue-card-live { font-size: 0.92rem; color: var(--ink-soft); margin-top: 0.2rem; }
 .venue-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-top: 0.8rem; flex-wrap: wrap; }
 .venue-card-actions { display: flex; align-items: center; gap: 0.7rem; }

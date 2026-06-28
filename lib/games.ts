@@ -21,6 +21,7 @@ export const REGISTRY: Registry = {
           region: "Shelter",
           slurl: "", // owner to fill (teleport SLurl) before launch
           hoursLabel: "",
+          musicLabel: "", // owner to fill (e.g. "Lo-fi Jazz Lounge") — shown as the venue's vibe
           dataPath: "tt/shelter.json",
         },
       ],

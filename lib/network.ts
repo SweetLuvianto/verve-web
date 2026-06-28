@@ -17,6 +17,7 @@ export interface DirVenue {
   region?: string;
   slurl?: string;
   hoursLabel?: string;
+  musicLabel?: string;
   dataPath: string;
 }
 
@@ -28,6 +29,8 @@ export interface VenueLiveRow extends DirVenue {
   shiftScore: number | null;
   activeOrders: number | null; // COUNT only
   event: string | null;
+  ambiancePhase: string | null; // scenery: in-world time phase
+  busy: string | null; // coarse presence band (never a raw count)
 }
 
 export interface NetworkView {
@@ -55,6 +58,7 @@ export function toDir(reg: Registry): DirVenue[] {
       region: v.region,
       slurl: v.slurl,
       hoursLabel: v.hoursLabel,
+      musicLabel: v.musicLabel,
       dataPath: v.dataPath,
     })),
   );
@@ -74,7 +78,7 @@ export function aggregateNetwork(
   const rows: VenueLiveRow[] = dir.map((d) => {
     const s = snaps[d.key] ?? null;
     if (!s) {
-      return { ...d, status: "unknown", online: false, ageSec: null, guestsServed: null, shiftScore: null, activeOrders: null, event: null };
+      return { ...d, status: "unknown", online: false, ageSec: null, guestsServed: null, shiftScore: null, activeOrders: null, event: null, ambiancePhase: null, busy: null };
     }
     const online = !!s.freshness?.heartbeat?.online;
     // null-safe: a structurally-broken-but-clean snapshot must degrade, never crash the hub.
@@ -92,6 +96,8 @@ export function aggregateNetwork(
       shiftScore: metric(s, "shiftScore"),
       activeOrders: orders && Array.isArray(orders.rows) ? orders.rows.length : 0, // COUNT only
       event: ev && "eventTitle" in ev ? ev.eventTitle : null,
+      ambiancePhase: s.ambiance?.phase ?? null,
+      busy: typeof s.busy === "string" ? s.busy : null,
     };
   });
 

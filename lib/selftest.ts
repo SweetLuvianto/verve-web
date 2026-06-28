@@ -110,4 +110,15 @@ assert.equal(safeExternalUrl(""), undefined);
 assert.equal(safeExternalUrl(undefined), undefined);
 ok("safeExternalUrl allows https/secondlife, blocks javascript:/empty");
 
+// --- ambiance phase + busy band surface through aggregateNetwork ---
+const ambSnap = { ...SAMPLE_SNAPSHOT, ambiance: { phase: "Golden hour" }, busy: "Lively" } as VenueSnapshot;
+const ambNet = aggregateNetwork(
+  [{ key: "g/v", id: "v", gameId: "g", gameName: "G", name: "V", dataPath: "x.json" }],
+  { "g/v": ambSnap },
+  Date.parse("2026-06-28T19:05:00Z"),
+);
+assert.equal(ambNet.rows[0].ambiancePhase, "Golden hour");
+assert.equal(ambNet.rows[0].busy, "Lively");
+ok("aggregateNetwork surfaces ambiance phase + busy band");
+
 console.log(`\nALL ${n} CHECKS PASSED`);

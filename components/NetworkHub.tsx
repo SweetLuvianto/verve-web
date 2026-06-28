@@ -154,6 +154,7 @@ export function NetworkHub({ baked }: { baked: DirVenue[] }) {
           {view.rows.map((r) => {
             const level = levelOf(r.online, r.ageSec);
             const tp = safeExternalUrl(r.slurl);
+            const vibe = [r.ambiancePhase, r.busy, r.musicLabel].filter(Boolean).join(" · ");
             return (
               <div key={r.key} className="venue-card">
                 <div className="venue-card-top">
@@ -164,6 +165,7 @@ export function NetworkHub({ baked }: { baked: DirVenue[] }) {
                   {r.gameName}
                   {r.region ? ` · ${r.region}` : ""}
                 </div>
+                {vibe && r.online ? <div className="venue-vibe">{vibe}</div> : null}
                 {r.hoursLabel ? <div className="venue-card-hours">{r.hoursLabel}</div> : null}
                 {r.online ? (
                   <div className="venue-card-live">
