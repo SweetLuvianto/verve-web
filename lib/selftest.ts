@@ -3,9 +3,10 @@
 import assert from "node:assert/strict";
 import { parseOrderBoard, parseScoreBoard, buildTtSnapshot, humanizeEvent } from "./tt-hovertext";
 import { assertPublishable, findViolations, scanForbidden } from "./sanitize";
-import { freshnessLevel } from "./snapshot";
+import { freshnessLevel, type VenueSnapshot } from "./snapshot";
 import { SAMPLE_ORDER_BOARD, SAMPLE_SCORE_BOARD, SAMPLE_SNAPSHOT } from "./fixtures/tt-sample";
 import { aggregateNetwork, toDir } from "./network";
+import { safeExternalUrl } from "./games";
 
 let n = 0;
 const ok = (label: string) => {
@@ -90,5 +91,23 @@ assert.equal(net.busiest.length, 1, "only online branches ranked");
 assert.equal(net.busiest[0].id, "shelter");
 assert.equal(net.events[0].event, "Live Jazz Night");
 ok("aggregateNetwork: totals + busiest (online-only) + events");
+
+// --- regression: malformed snapshot DEGRADES (no crash) + safeExternalUrl scheme guard ---
+const badNet = aggregateNetwork(
+  [{ key: "g/v", id: "v", gameId: "g", gameName: "G", name: "V", dataPath: "x.json" }],
+  { "g/v": { foo: 1 } as unknown as VenueSnapshot },
+  Date.parse("2026-06-28T19:05:00Z"),
+);
+assert.equal(badNet.rows[0].ageSec, null, "missing freshness -> ageSec null (no crash)");
+assert.equal(badNet.rows[0].online, false);
+assert.equal(badNet.rows[0].status, "unknown");
+ok("aggregateNetwork degrades a malformed snapshot instead of crashing");
+
+assert.equal(safeExternalUrl("javascript:alert(1)"), undefined, "javascript: blocked");
+assert.equal(safeExternalUrl("HTTPS://maps.secondlife.com/x"), "HTTPS://maps.secondlife.com/x");
+assert.equal(safeExternalUrl("secondlife:///app/teleport/X"), "secondlife:///app/teleport/X");
+assert.equal(safeExternalUrl(""), undefined);
+assert.equal(safeExternalUrl(undefined), undefined);
+ok("safeExternalUrl allows https/secondlife, blocks javascript:/empty");
 
 console.log(`\nALL ${n} CHECKS PASSED`);

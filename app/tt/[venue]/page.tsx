@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { findGame, findVenue } from "@/lib/games";
+import { findGame, findVenue, safeExternalUrl } from "@/lib/games";
 import { VenueLive } from "@/components/VenueLive";
 import { MenuShowcase } from "@/components/ui";
 import { TT_MENU } from "@/lib/menu";
@@ -30,8 +30,8 @@ export default async function VenuePage({ params }: { params: Promise<{ venue: s
         <div className="venue-head">
           <h1 className="h1">{v.name}</h1>
           {v.hoursLabel ? <div className="hours">{v.hoursLabel}</div> : null}
-          {v.slurl ? (
-            <a className="btn" href={v.slurl} target="_blank" rel="noopener noreferrer">
+          {safeExternalUrl(v.slurl) ? (
+            <a className="btn" href={safeExternalUrl(v.slurl)} target="_blank" rel="noopener noreferrer">
               Teleport in Second Life
             </a>
           ) : null}

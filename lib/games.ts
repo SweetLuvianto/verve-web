@@ -45,3 +45,10 @@ export function gameRouteSegment(gameId: string): string {
 export function venueHref(gameId: string, venueId: string): string {
   return `/${gameRouteSegment(gameId)}/${venueId}`;
 }
+
+// Only allow safe schemes in an external (teleport) href — blocks javascript:/data: etc.
+// even if a registry/snapshot is corrupted or mis-synced (defense-in-depth on the data host).
+export function safeExternalUrl(u?: string): string | undefined {
+  if (!u) return undefined;
+  return /^(https?:|secondlife:)/i.test(u.trim()) ? u : undefined;
+}

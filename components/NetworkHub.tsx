@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { fetchNetwork, aggregateNetwork, type DirVenue, type NetworkView } from "@/lib/network";
-import { venueHref } from "@/lib/games";
+import { venueHref, safeExternalUrl } from "@/lib/games";
 import { StatusBadge, FreshnessPill, type PillLevel } from "@/components/ui";
 
 const POLL_MS = 75_000;
@@ -21,11 +21,16 @@ export function NetworkHub({ baked }: { baked: DirVenue[] }) {
   const [view, setView] = useState<NetworkView>(() => aggregateNetwork(baked, {}, 0));
   const [source, setSource] = useState<"live" | "baked">("baked");
 
+  const hasLive = useRef(false);
   const load = useCallback(async () => {
     if (typeof document !== "undefined" && document.hidden) return;
     const res = await fetchNetwork(baked, Date.now());
-    setView(res);
-    setSource(res.source);
+    // keep the last good live view if a transient registry blip falls back to baked
+    if (res.source === "live" || !hasLive.current) {
+      setView(res);
+      setSource(res.source);
+    }
+    if (res.source === "live") hasLive.current = true;
   }, [baked]);
 
   useEffect(() => {
@@ -100,7 +105,7 @@ export function NetworkHub({ baked }: { baked: DirVenue[] }) {
         <section className="card">
           <div className="card-title">What&apos;s on across the network</div>
           {view.events.length ? (
-            view.events.map((e) => (
+            view.events.slice(0, 8).map((e) => (
               <Link key={e.key} href={venueHref(e.gameId, e.id)} className="event-row">
                 <span className="event-dot" aria-hidden />
                 <span className="event-venue">{e.name}</span>
@@ -119,6 +124,7 @@ export function NetworkHub({ baked }: { baked: DirVenue[] }) {
         <div className="hub-grid">
           {view.rows.map((r) => {
             const level = levelOf(r.online, r.ageSec);
+            const tp = safeExternalUrl(r.slurl);
             return (
               <div key={r.key} className="venue-card">
                 <div className="venue-card-top">
@@ -139,13 +145,13 @@ export function NetworkHub({ baked }: { baked: DirVenue[] }) {
                   <div className="venue-card-live muted">offline</div>
                 )}
                 <div className="venue-card-foot">
-                  <FreshnessPill level={level} ageSec={r.ageSec ?? 0} />
+                  <FreshnessPill level={level} ageSec={Number.isFinite(r.ageSec) ? (r.ageSec as number) : 0} />
                   <div className="venue-card-actions">
                     <Link href={venueHref(r.gameId, r.id)} className="link-min">
                       Details →
                     </Link>
-                    {r.slurl ? (
-                      <a className="btn-min" href={r.slurl} target="_blank" rel="noopener noreferrer">
+                    {tp ? (
+                      <a className="btn-min" href={tp} target="_blank" rel="noopener noreferrer">
                         Teleport
                       </a>
                     ) : null}

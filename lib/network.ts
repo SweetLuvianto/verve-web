@@ -76,8 +76,11 @@ export function aggregateNetwork(
       return { ...d, status: "unknown", online: false, ageSec: null, guestsServed: null, shiftScore: null, activeOrders: null, event: null };
     }
     const online = !!s.freshness?.heartbeat?.online;
-    const ageSec = Math.max(0, Math.round((nowMs - Date.parse(s.freshness.generatedAt)) / 1000));
-    const orders = s.panels?.find((p) => p.type === "orders.active.v1");
+    // null-safe: a structurally-broken-but-clean snapshot must degrade, never crash the hub.
+    const genAt = s.freshness?.generatedAt;
+    const t = genAt ? Date.parse(genAt) : NaN;
+    const ageSec = Number.isFinite(t) ? Math.max(0, Math.round((nowMs - t) / 1000)) : null;
+    const orders = s.panels?.find((p) => p.type === "orders.active.v1") as { rows?: unknown } | undefined;
     const ev = s.panels?.find((p) => p.type === "event.summary.v1");
     return {
       ...d,
@@ -86,7 +89,7 @@ export function aggregateNetwork(
       ageSec,
       guestsServed: metric(s, "guestsServed"),
       shiftScore: metric(s, "shiftScore"),
-      activeOrders: orders && "rows" in orders ? orders.rows.length : 0, // COUNT only
+      activeOrders: orders && Array.isArray(orders.rows) ? orders.rows.length : 0, // COUNT only
       event: ev && "eventTitle" in ev ? ev.eventTitle : null,
     };
   });
@@ -128,6 +131,7 @@ export async function fetchNetwork(baked: DirVenue[], nowMs: number): Promise<Ne
     const res = await fetch(dataUrl("registry.json", nowMs), { cache: "no-store" });
     if (res.ok) {
       const reg = (await res.json()) as Registry;
+      assertPublishable(reg); // defensive net symmetric with the snapshot path
       const live = toDir(reg);
       if (live.length) {
         dir = live;
