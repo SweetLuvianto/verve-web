@@ -15,7 +15,7 @@ export interface SnapshotResult {
 
 // Data host base. Defaults to the GitHub Pages data repo; override via env at build.
 // If the file isn't published yet, the live fetch fails and we fall back to SAMPLE.
-const DATA_BASE = (
+export const DATA_BASE = (
   process.env.NEXT_PUBLIC_DATA_BASE_URL ?? "https://sweetluvianto.github.io/verve-web-data"
 ).replace(/\/$/, "");
 

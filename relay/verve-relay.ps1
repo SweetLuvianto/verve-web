@@ -181,6 +181,35 @@ function Content-Hash($snap) {
   return [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($bytes))
 }
 
+function Xml-Escape($s) {
+  if ($null -eq $s) { return '' }
+  return ([string]$s).Replace('&', '&amp;').Replace('<', '&lt;').Replace('>', '&gt;').Replace('"', '&quot;').Replace("'", '&#39;')
+}
+# Embeddable live "Open Now" badge (static SVG, regenerated each publish). Aggregate fields only.
+function Build-Badge-Svg($snap) {
+  $name = Xml-Escape $VenueName
+  $online = [bool]$snap.freshness.heartbeat.online
+  $open = ($snap.status.state -eq 'open') -and $online
+  $served = ($snap.metrics | Where-Object { $_.key -eq 'guestsServed' } | Select-Object -First 1).value
+  $pill = if ($open) { 'OPEN' } else { 'CLOSED' }
+  $pillColor = if ($open) { '#5d8a33' } else { '#8d8f72' }
+  if ($open) {
+    $bits = @(); if ($null -ne $served) { $bits += "$served served" }; if ($snap.busy) { $bits += $snap.busy }; if ($snap.ambiance.phase) { $bits += $snap.ambiance.phase }
+    $line = Xml-Escape (($bits) -join ' · ')
+  } else { $line = 'Currently closed' }
+  @"
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="84" viewBox="0 0 360 84" role="img" aria-label="$name $pill">
+<rect width="360" height="84" rx="12" fill="#6f7159"/>
+<rect x="6" y="6" width="348" height="72" rx="9" fill="#F7F4EC"/>
+<text x="22" y="37" font-family="Georgia,'Times New Roman',serif" font-size="21" font-weight="700" fill="#33332C">$name</text>
+<text x="22" y="61" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#6E6F62">$line</text>
+<rect x="260" y="21" width="78" height="22" rx="11" fill="$pillColor"/>
+<text x="299" y="36" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="700" fill="#F7F4EC">$pill</text>
+<text x="338" y="63" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="10" letter-spacing="1" fill="#A89C84">VERVE</text>
+</svg>
+"@
+}
+
 function Publish($snap) {
   $now = $snap.freshness.generatedAt
   $json = $snap | ConvertTo-Json -Depth 12 -Compress
@@ -190,9 +219,11 @@ function Publish($snap) {
   # registry.json is OWNER-AUTHORED (the franchise directory) — the relay must NOT touch it.
   # The relay only writes its own per-venue snapshot; the hub reads registry.json + each snapshot.
   New-Item -ItemType Directory -Force -Path "$DataRepo\tt" | Out-Null
+  New-Item -ItemType Directory -Force -Path "$DataRepo\badge" | Out-Null
   Set-Content -Path "$DataRepo\tt\$VenueId.json" -Value $json -Encoding UTF8 -NoNewline
+  Set-Content -Path "$DataRepo\badge\$VenueId.svg" -Value (Build-Badge-Svg $snap) -Encoding UTF8 -NoNewline
   Push-Location $DataRepo
-  git add "tt/$VenueId.json" *> $null
+  git add "tt/$VenueId.json" "badge/$VenueId.svg" *> $null
   git commit -q -m "snapshot $VenueId $now ($($snap.status.state)/$(if($snap.freshness.heartbeat.online){'online'}else{'offline'}))" *> $null
   git push -q origin main *> $null
   Pop-Location
