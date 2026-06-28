@@ -81,6 +81,8 @@ export interface VenueSnapshot {
   metrics?: Metric[];
   panels?: Panel[];
   freshness: Freshness;
+  // Relay-written proof that the privacy scrub ran clean before publish (trust signal).
+  attestation?: { scan: "pass"; checkedAt: string; schemaVersion: number };
 }
 
 // Registry = owner config listing games + venues (what the hub renders).

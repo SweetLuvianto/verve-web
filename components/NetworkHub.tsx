@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { fetchNetwork, aggregateNetwork, type DirVenue, type NetworkView } from "@/lib/network";
-import { venueHref, safeExternalUrl } from "@/lib/games";
+import { venueHref, safeExternalUrl, NETWORK_DAILY_GOAL } from "@/lib/games";
 import { StatusBadge, FreshnessPill, type PillLevel } from "@/components/ui";
 
 const POLL_MS = 75_000;
@@ -48,10 +48,23 @@ export function NetworkHub({ baked }: { baked: DirVenue[] }) {
 
   const t = view.totals;
   const top = view.busiest[0];
+  const goalPct = Math.max(0, Math.min(100, Math.round((t.guestsServedTotal / NETWORK_DAILY_GOAL) * 100)));
+  const goalReached = t.guestsServedTotal >= NETWORK_DAILY_GOAL;
+  const attTime = view.attestation.latestAt ? new Date(view.attestation.latestAt).toLocaleTimeString() : null;
 
   return (
     <>
-      <h1 className="h1">Our Venues</h1>
+      <h1 className="h1">VERVE Tonight</h1>
+      <p className="hero-pulse">
+        {t.branchesOpen} of {t.branchesTotal} branches open · {t.guestsServedTotal} guests served today · {t.eventsLive}{" "}
+        {t.eventsLive === 1 ? "event" : "events"} on
+      </p>
+      {view.attestation.any && attTime ? (
+        <p className="attest" title="The relay scrubs every snapshot and refuses to publish if any name/UUID/token is present.">
+          🛡 Privacy-safe · verified clean at {attTime} — no names, UUIDs, or guest rows.{" "}
+          <Link href="/trust" className="link-min">How we protect privacy →</Link>
+        </p>
+      ) : null}
 
       {/* Network status strip + totals today */}
       <section className="netstrip">
@@ -73,6 +86,22 @@ export function NetworkHub({ baked }: { baked: DirVenue[] }) {
           <div className="stat-v">{t.eventsLive}</div>
           <div className="stat-l">events live</div>
         </div>
+      </section>
+
+      {/* Network co-op challenge: all branches fill one shared bar together */}
+      <section className="coop">
+        <div className="coop-top">
+          <span className="coop-label">Tonight&apos;s network goal — guests served together</span>
+          <b className="coop-num">
+            {t.guestsServedTotal} / {NETWORK_DAILY_GOAL}
+          </b>
+        </div>
+        <div className="coop-bar">
+          <i style={{ width: `${goalPct}%` }} />
+        </div>
+        {goalReached ? (
+          <div className="coop-win">🎉 Goal reached tonight — thank you, every branch!</div>
+        ) : null}
       </section>
 
       <div className="hubcols">

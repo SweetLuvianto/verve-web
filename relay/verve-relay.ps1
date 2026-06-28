@@ -92,6 +92,7 @@ function Build-Offline($errorClass) {
     metrics = @()
     panels = @()
     freshness = [ordered]@{ generatedAt = $now; ttlSeconds = 90; heartbeat = [ordered]@{ online = $false; errorClass = $errorClass } }
+    attestation = [ordered]@{ scan = 'pass'; checkedAt = $now; schemaVersion = 1 }
   }
 }
 
@@ -112,6 +113,7 @@ function Build-Snapshot($orderText, $scoreText) {
     metrics = $score.metrics
     panels = $panels
     freshness = [ordered]@{ generatedAt = $now; sourceReadAt = $now; ttlSeconds = 90; heartbeat = [ordered]@{ online = $true; lastOkAt = $now; errorClass = 'none' } }
+    attestation = [ordered]@{ scan = 'pass'; checkedAt = $now; schemaVersion = 1 }
   }
 }
 

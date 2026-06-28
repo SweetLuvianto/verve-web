@@ -41,6 +41,7 @@ export interface NetworkView {
   };
   busiest: VenueLiveRow[];
   events: { key: string; gameId: string; id: string; name: string; event: string; slurl?: string }[];
+  attestation: { any: boolean; latestAt: string | null };
 }
 
 export function toDir(reg: Registry): DirVenue[] {
@@ -115,7 +116,14 @@ export function aggregateNetwork(
     .filter((r) => !!r.event)
     .map((r) => ({ key: r.key, gameId: r.gameId, id: r.id, name: r.name, event: r.event as string, slurl: r.slurl }));
 
-  return { rows, totals, busiest, events };
+  const attCheckedAt = dir
+    .map((d) => snaps[d.key]?.attestation)
+    .filter((a): a is NonNullable<typeof a> => !!a && a.scan === "pass")
+    .map((a) => a.checkedAt)
+    .sort();
+  const attestation = { any: attCheckedAt.length > 0, latestAt: attCheckedAt.length ? attCheckedAt[attCheckedAt.length - 1] : null };
+
+  return { rows, totals, busiest, events, attestation };
 }
 
 export interface NetworkResult extends NetworkView {

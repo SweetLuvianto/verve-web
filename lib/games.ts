@@ -4,6 +4,9 @@
 
 import type { Registry, RegistryVenue } from "./snapshot";
 
+// Shared network "co-op" goal: guests served across all branches today (owner-tunable).
+export const NETWORK_DAILY_GOAL = 50;
+
 export const REGISTRY: Registry = {
   schemaVersion: 1,
   games: [
