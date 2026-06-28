@@ -1,7 +1,7 @@
 // Foundation selftest — run with: npx --yes tsx lib/selftest.ts
 // Independent runtime evidence for the M1 parser + privacy gate (not bundled into the app).
 import assert from "node:assert/strict";
-import { parseOrderBoard, parseScoreBoard, buildTtSnapshot } from "./tt-hovertext";
+import { parseOrderBoard, parseScoreBoard, buildTtSnapshot, humanizeEvent } from "./tt-hovertext";
 import { assertPublishable, findViolations, scanForbidden } from "./sanitize";
 import { freshnessLevel } from "./snapshot";
 import { SAMPLE_ORDER_BOARD, SAMPLE_SCORE_BOARD, SAMPLE_SNAPSHOT } from "./fixtures/tt-sample";
@@ -26,6 +26,11 @@ assert.equal(score.metrics.find((m) => m.key === "shiftScore")?.value, 1840);
 assert.equal(score.metrics.find((m) => m.key === "guestsServed")?.value, 37);
 assert.equal(score.metrics.find((m) => m.key === "loyaltyGuests")?.value, 4);
 ok("parseScoreBoard extracts event + 3 metrics");
+
+// --- event humanization (id-like -> Title Case; human strings untouched) ---
+assert.equal(humanizeEvent("food_critic_visit"), "Food Critic Visit");
+assert.equal(humanizeEvent("Live Jazz Night"), "Live Jazz Night");
+ok("humanizeEvent titleizes id-like values, leaves human strings");
 
 // --- snapshot build shape ---
 assert.equal(SAMPLE_SNAPSHOT.envelopeVersion, 1);

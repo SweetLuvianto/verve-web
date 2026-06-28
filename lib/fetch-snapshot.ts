@@ -13,9 +13,11 @@ export interface SnapshotResult {
   source: SnapshotSource;
 }
 
-// Data host base, e.g. https://sweetluvianto.github.io/verve-web-data (set at build via env).
-// Empty in MVP/dev -> the live tier is skipped and we fall back to SAMPLE.
-const DATA_BASE = (process.env.NEXT_PUBLIC_DATA_BASE_URL ?? "").replace(/\/$/, "");
+// Data host base. Defaults to the GitHub Pages data repo; override via env at build.
+// If the file isn't published yet, the live fetch fails and we fall back to SAMPLE.
+const DATA_BASE = (
+  process.env.NEXT_PUBLIC_DATA_BASE_URL ?? "https://sweetluvianto.github.io/verve-web-data"
+).replace(/\/$/, "");
 
 export function dataUrl(dataPath: string, nowMs: number): string {
   // 60s bucket: every visitor in the same minute hits the SAME url -> shared edge cache

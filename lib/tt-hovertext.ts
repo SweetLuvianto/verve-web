@@ -42,6 +42,15 @@ function toInt(s: string): number {
   return isNaN(n) ? 0 : n;
 }
 
+// Humanize id-like event values ("food_critic_visit" -> "Food Critic Visit").
+// Leaves already-human strings (with spaces/caps) untouched.
+export function humanizeEvent(s: string): string {
+  if (/^[a-z0-9_]+$/.test(s)) {
+    return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  return s;
+}
+
 export function parseScoreBoard(text: string): ScoreBoard {
   const lines = (text ?? "").split(/\r?\n/);
   const metrics: Metric[] = [];
@@ -93,7 +102,7 @@ export function buildTtSnapshot(input: BuildTtInput): VenueSnapshot {
 
   const panels: Panel[] = [{ type: "orders.active.v1", title: "Kitchen", rows: orders }];
   if (score.event) {
-    panels.push({ type: "event.summary.v1", title: "Tonight", eventTitle: score.event });
+    panels.push({ type: "event.summary.v1", title: "Tonight", eventTitle: humanizeEvent(score.event) });
   }
 
   const online = input.online ?? true;
