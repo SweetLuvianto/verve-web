@@ -5,6 +5,7 @@ import { parseOrderBoard, parseScoreBoard, buildTtSnapshot, humanizeEvent } from
 import { assertPublishable, findViolations, scanForbidden } from "./sanitize";
 import { freshnessLevel } from "./snapshot";
 import { SAMPLE_ORDER_BOARD, SAMPLE_SCORE_BOARD, SAMPLE_SNAPSHOT } from "./fixtures/tt-sample";
+import { aggregateNetwork, toDir } from "./network";
 
 let n = 0;
 const ok = (label: string) => {
@@ -66,5 +67,28 @@ assert.equal(freshnessLevel("2026-06-28T19:00:00Z", true, now), "delayed"); // 5
 assert.equal(freshnessLevel("2026-06-28T18:50:00Z", true, now), "stale"); // 15m
 assert.equal(freshnessLevel("2026-06-28T19:04:59Z", false, now), "stale"); // offline overrides
 ok("freshnessLevel: live / delayed / stale + offline override");
+
+// --- network aggregation (busiest = online only; counts only; events) ---
+const dir = toDir({
+  schemaVersion: 1,
+  games: [{ id: "table-and-tales", name: "Table & Tales", venues: [
+    { id: "shelter", name: "Shelter", gameId: "table-and-tales", dataPath: "tt/shelter.json" },
+    { id: "harbor", name: "Harbor", gameId: "table-and-tales", dataPath: "tt/harbor.json" },
+  ] }],
+});
+const net = aggregateNetwork(
+  dir,
+  { "table-and-tales/shelter": SAMPLE_SNAPSHOT, "table-and-tales/harbor": null },
+  Date.parse("2026-06-28T19:05:00Z"),
+);
+assert.equal(net.totals.branchesTotal, 2);
+assert.equal(net.totals.branchesOpen, 1, "one open (harbor offline)");
+assert.equal(net.totals.branchesOnline, 1);
+assert.equal(net.totals.guestsServedTotal, 37, "shelter 37 + harbor null->0");
+assert.equal(net.totals.eventsLive, 1);
+assert.equal(net.busiest.length, 1, "only online branches ranked");
+assert.equal(net.busiest[0].id, "shelter");
+assert.equal(net.events[0].event, "Live Jazz Night");
+ok("aggregateNetwork: totals + busiest (online-only) + events");
 
 console.log(`\nALL ${n} CHECKS PASSED`);

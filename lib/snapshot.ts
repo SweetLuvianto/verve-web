@@ -88,6 +88,7 @@ export interface RegistryVenue {
   id: string;
   name: string;
   gameId: string;
+  region?: string; // SL region / land the branch sits on
   slurl?: string;
   hoursLabel?: string;
   dataPath: string; // path under the data host, e.g. "tt/shelter.json"

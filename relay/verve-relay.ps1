@@ -150,16 +150,12 @@ function Publish($snap) {
   # final defensive scan before anything is written
   $hit = Scan-Forbidden $json
   if ($hit) { Write-Host "PUBLISH BLOCKED ($hit)"; return }
-  $reg = [ordered]@{
-    schemaVersion = 1; generatedAt = $now
-    games = @([ordered]@{ id = 'table-and-tales'; name = 'Table & Tales'; venues = @([ordered]@{
-      id = $VenueId; name = $VenueName; status = $snap.status.state; online = $snap.freshness.heartbeat.online; generatedAt = $now; dataPath = "tt/$VenueId.json" }) })
-  }
+  # registry.json is OWNER-AUTHORED (the franchise directory) — the relay must NOT touch it.
+  # The relay only writes its own per-venue snapshot; the hub reads registry.json + each snapshot.
   New-Item -ItemType Directory -Force -Path "$DataRepo\tt" | Out-Null
   Set-Content -Path "$DataRepo\tt\$VenueId.json" -Value $json -Encoding UTF8 -NoNewline
-  Set-Content -Path "$DataRepo\registry.json" -Value ($reg | ConvertTo-Json -Depth 8 -Compress) -Encoding UTF8 -NoNewline
   Push-Location $DataRepo
-  git add "tt/$VenueId.json" registry.json *> $null
+  git add "tt/$VenueId.json" *> $null
   git commit -q -m "snapshot $VenueId $now ($($snap.status.state)/$(if($snap.freshness.heartbeat.online){'online'}else{'offline'}))" *> $null
   git push -q origin main *> $null
   Pop-Location

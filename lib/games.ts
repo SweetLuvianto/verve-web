@@ -15,6 +15,7 @@ export const REGISTRY: Registry = {
           id: "shelter",
           name: "Table & Tales — Shelter",
           gameId: "table-and-tales",
+          region: "Shelter",
           slurl: "", // owner to fill (teleport SLurl) before launch
           hoursLabel: "",
           dataPath: "tt/shelter.json",
@@ -34,4 +35,13 @@ export function findGame(gameId: string) {
 
 export function findVenue(gameId: string, venueId: string): RegistryVenue | undefined {
   return findGame(gameId)?.venues.find((v) => v.id === venueId);
+}
+
+// Map a gameId to its URL route segment. Today only Table & Tales exists and lives at /tt/[venue]
+// (per the MVP routing decision); future games can use their gameId as the segment.
+export function gameRouteSegment(gameId: string): string {
+  return gameId === "table-and-tales" ? "tt" : gameId;
+}
+export function venueHref(gameId: string, venueId: string): string {
+  return `/${gameRouteSegment(gameId)}/${venueId}`;
 }
