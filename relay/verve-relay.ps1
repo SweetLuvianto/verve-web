@@ -12,6 +12,10 @@ param(
   [switch]$SelfTest,
   [int]$IntervalSec = 15,
   [int]$HeartbeatSec = 90,
+  [switch]$NoKeepAlive,        # skip the avatar keep-alive teleport (e.g. when push-bridge already does it)
+  [int]$KeepAliveCycles = 40,  # at 15s interval => teleport ~every 10 min (dodge idle-logout)
+  [string]$KaRegion = "Shelter",
+  [double]$KaX = 236, [double]$KaY = 132, [double]$KaZ = 1505,
   [string]$DataRepo = "D:\dev\verve-web-data",
   [string]$VenueId = "shelter",
   [string]$VenueName = "Table & Tales — Shelter",
@@ -205,10 +209,17 @@ if (Test-Path $lock) {
 }
 "$PID" | Set-Content $lock
 Write-Host "verve-relay running (venue=$VenueId, read ${IntervalSec}s, heartbeat ${HeartbeatSec}s). Ctrl+C to stop."
-$lastHash = ''; $lastPublish = [DateTime]::MinValue
+$lastHash = ''; $lastPublish = [DateTime]::MinValue; $cycle = 0
 try {
   while ($true) {
+    $cycle++
     $hdr = Get-Header
+    # keep-alive: a teleport (mutation; needs the kill-switch on) dodges the ~30-min idle-logout.
+    # Skipped when -NoKeepAlive (e.g. push-bridge already keeps the avatar online).
+    if (-not $NoKeepAlive -and ($cycle % $KeepAliveCycles -eq 1) -and $cycle -gt 1) {
+      $ru = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+      try { Invoke-WebRequest "$BridgeBase/avatar/teleport?regionName=$KaRegion&x=$KaX&y=$KaY&z=$KaZ&allowTeleport=true&confirm=true&runId=ka$ru" -Method POST -Headers $hdr -TimeoutSec 15 -UseBasicParsing | Out-Null } catch {}
+    }
     $snap = Read-And-Build $hdr
     $h = Content-Hash $snap
     $due = ((Get-Date) - $lastPublish).TotalSeconds -ge $HeartbeatSec
