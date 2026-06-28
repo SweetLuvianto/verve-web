@@ -1,66 +1,32 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import Link from "next/link";
+import { REGISTRY } from "@/lib/games";
 
+// Portfolio hub: lists every VERVE game + venue (only Table & Tales / Shelter for MVP).
 export default function Home() {
+  const venues = REGISTRY.games.flatMap((g) =>
+    g.venues.map((v) => ({ gameId: g.id, gameName: g.name, venue: v })),
+  );
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="page">
+      <header className="topbar">
+        <div className="brand">VERVE</div>
+        <div className="tagline">Live venues · Second Life</div>
+      </header>
+
+      <section className="hub">
+        <h1 className="h1">Our Venues</h1>
+        <div className="hub-grid">
+          {venues.map(({ gameId, gameName, venue }) => (
+            <Link key={`${gameId}/${venue.id}`} href={`/${gameId}/${venue.id}`} className="venue-card">
+              <div className="venue-card-name">{venue.name}</div>
+              <div className="venue-card-game">{gameName}</div>
+              <div className="venue-card-cta">View live status →</div>
+            </Link>
+          ))}
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </section>
+
+      <footer className="footer">VERVE · read-only live dashboard</footer>
+    </main>
   );
 }
